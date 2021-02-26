@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicTacToe</title>
+    <style>
+        .cell {
+            background-color: green;
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: solid 1px white;
+            vertical-align: middle;
+            line-height: 30px;
+            font-size: 25px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <span style="text-align: center;"><h1>TicTacToe</h1></span>
+    <div id="board"></div>
+
+    <script>
+        let pattern = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ] //初始值
+
+        let color = 1;
+
+        function show(pattern) {
+            let board = document.getElementById("board");
+            //清空
+            board.innerHTML = "";
+            for(let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    let cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    let content = "";
+                    if (pattern[i][j] == 2) {
+                        content = "X";  //机器
+                    } else if (pattern[i][j] == 1) {
+                        content = "O";  //人
+                    }
+                    cell.innerHTML = content;
+                    cell.addEventListener("click", () => userMove(i, j));
+                    board.appendChild(cell);
+                }
+                board.appendChild(document.createElement("br"));
+            }
+        }
+
+        function userMove(x, y) {
+            pattern[x][y] = color;
+            show(pattern);
+            if(check(pattern, color)) {
+                alert(color == 2? "X is winner" : "O is winner");
+            }
+
+            //继续下一轮
+            color = 3 - color;
+            // if(willWin(pattern, color)) { //
+            //     console.log(color == 2? "` will winner" : "O will winner");
+            // } 
+            show(pattern);
+            computerMove();
+            // console.log(bestChoice(pattern, color));
+        }
+
+        function computerMove(x, y) {
+            let point = bestChoice(pattern, color).point;
+            if(point) {
+                pattern[point[0]][point[1]] = color;
+            } 
+            if(check(pattern, color)) {
+                alert(color == 2? "X is winner" : "O is winner");
+            }
+            //继续下一轮
+            color = 3 - color;
+            show(pattern);
+        }
+
+        function check(pattern, color) {
+
+            //横的
+            for (let i = 0; i < 3; i++) {
+                let win = true;
+                for(let j = 0; j < 3; j++) {
+                    if(pattern[i][j] !== color) {
+                        win = false;
+                        break;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+
+             //竖的
+            for (let i = 0; i < 3; i++) {
+                let win = true;
+                for(let j = 0; j < 3; j++) {
+                    if(pattern[j][i] !== color) {
+                        win = false;
+                        break;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+
+            //左斜
+            {
+                let win = true;
+                for(let i = 0; i < 3; i++) {
+                    if(pattern[i][2-i] !== color){
+                        win = false;
+                        break;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+
+            //右斜
+            {
+                let win = true;
+                for(let i = 0; i < 3; i++) {
+                    if(pattern[i][i] !== color){
+                        win = false;
+                        break;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function clone(pattern) {
+            return JSON.parse(JSON.stringify(pattern));
+        }
+
+        function willWin(pattern, color) {
+            for(let i = 0; i < 3; i++) {
+                for(let j = 0; j < 3; j++) {
+                    if(pattern[i][j]) { //有棋子了
+                        continue;
+                    }
+                    let tmp  = clone(pattern);
+                    tmp[i][j] = color;
+                    if(check(tmp, color)) {
+                        return [i, j];
+                    }
+                }
+            }
+            return null;
+        }
+
+        function bestChoice(pattern, color) {
+            let p = willWin(pattern, color);
+            if(p) {
+                return {
+                    point: p,
+                    result: 1   //1是赢，-1是输, 0是和
+                }
+            }
+            let result = -2; 
+            let point = null;
+            for (let i = 0; i < 3; i++) {
+                for (let j= 0; j < 3; j++) {
+                    if(pattern[i][j]) {
+                        continue;
+                    }
+                    let tmp = clone(pattern);
+                    tmp[i][j] = color;
+                    //对方最好的选择，对己方最坏
+                    let r = bestChoice(tmp, 3 - color).result;
+
+                    if(- r > result) {
+                        result = - r;
+                        point = [i, j];
+                    }
+                }
+            }
+
+            return {
+                point: point,
+                result: point? result : 0
+            }
+        }
+
+        show(pattern);
+    </script>
+</body>
+</html>
