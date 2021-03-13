@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四则运算(LL语法分析)</title>
+</head>
+
+<body>
+    <script>
+
+        let regexp = /([0-9\.]+)|([ \t\n\r]+)|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g
+        let dictionary = ['Number', 'Whitespace', 'LineTerminator', '*', '/', '+', '-'];
+
+        function* tokennize(source) {
+            var result = null;
+            var lastIndex = 0;
+            while (true) {
+                lastIndex = regexp.lastIndex
+                result = regexp.exec(source);
+                if (!result) {
+                    break;
+                }
+                if (regexp.lastIndex - lastIndex > result[0].length) {
+                    break;
+                }
+
+                let token = {
+                    type: null,
+                    value: null
+                }
+                for (let i = 1; i < dictionary.length; i++) {
+                    if (result[i]) {
+                        token.type = dictionary[i - 1];
+                    }
+                }
+                token.value = result[0];
+                yield token;
+            }
+            yield {
+                type: "EOF"
+            }
+        }
+
+        function AdditiveExpression(str) {
+            if (str[0].type === 'mul') {
+                let node = {
+                    type: 'add',
+                    children: [str[0]]
+                }
+                str[0] = node
+                return AdditiveExpression(str)
+            }
+            if (str[0].type === 'add' && str[1] && str[1].type === '+') {
+                let node = {
+                    type: 'add',
+                    operator: '+',
+                    children: []
+                }
+                node.children.push(str.shift())
+                node.children.push(str.shift())
+                MultiplicativeExpression(str)
+                node.children.push(str.shift())
+                str.unshift(node)
+                return AdditiveExpression(str)
+            }
+            if (str[0].type === 'add' && str[1] && str[1].type === '-') {
+                let node = {
+                    type: 'add',
+                    operator: '-',
+                    children: []
+                }
+                node.children.push(str.shift())
+                node.children.push(str.shift())
+                MultiplicativeExpression(str)
+                node.children.push(str.shift())
+                str.unshift(node)
+                return AdditiveExpression(str)
+            }
+            if (str[0].type === 'add') {
+                return str[0]
+            }
+            MultiplicativeExpression(str)
+            return AdditiveExpression(str)
+        }
+
+        function Expression(str) {
+            if (str[0].type === 'add' && str[1] && str[1].type === 'EOF') {
+                let node = {
+                    type: 'exp',
+                    children: [str.shift(), str.shift()]
+                }
+                str.unshift(node)
+                return node
+            }
+            AdditiveExpression(str)
+            return Expression(str)
+        }
+
+        function MultiplicativeExpression(str) {
+            if (str[0].type === 'Number') {
+                let node = {
+                    type: 'mul',
+                    children: [str[0]]
+                }
+                str[0] = node
+                return MultiplicativeExpression(str)
+            }
+            if (str[0].type === 'mul' && str[1] && str[1].type === '*') {
+                let node = {
+                    type: 'mul',
+                    operator: '*',
+                    children: []
+                }
+                node.children.push(str.shift())
+                node.children.push(str.shift())
+                node.children.push(str.shift())
+                str.unshift(node)
+                return MultiplicativeExpression(str)
+            }
+            if (str[0].type === 'mul' && str[1] && str[1].type === '/') {
+                let node = {
+                    type: 'mul',
+                    operator: '/',
+                    children: []
+                }
+                node.children.push(str.shift())
+                node.children.push(str.shift())
+                node.children.push(str.shift())
+                str.unshift(node)
+                return MultiplicativeExpression(str)
+            }
+            if (str[0].type === 'mul') {
+                return str[0]
+            }
+        }
+
+        //分词
+        let tokens = []
+        for (let token of tokennize("1 * 2 + 2 * 7")) {
+            if (token.type !== "Whitespace" && token.type !== "LineTerminator") {
+                tokens.push(token)
+            }
+        }
+
+        //语法分析
+        console.log("分词结果: ", tokens);
+        let tokenscopy = JSON.parse(JSON.stringify(tokens))
+        console.log("语法分析结果: ", Expression(tokenscopy));
+    </script>
+</body>
+
+</html>
